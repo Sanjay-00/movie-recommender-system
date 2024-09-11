@@ -3,24 +3,28 @@ import pickle
 import pandas as pd
 import requests
 import os
-import numpy as np  # Import numpy
 
-# Load the movie list as before
+# URL of the similarity.pkl file in GitHub Release
+SIMILARITY_URL = 'https://github.com/Sanjay-00/movie-recommender-system/releases/tag/1.1/similarity.pkl'
+
+# Function to download similarity.pkl from GitHub release
+def download_similarity_file():
+    local_filename = 'similarity.pkl'
+    if not os.path.exists(local_filename):
+        with st.spinner('Downloading similarity file...'):
+            response = requests.get(SIMILARITY_URL, stream=True)
+            with open(local_filename, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=1024):
+                    if chunk:
+                        f.write(chunk)
+            st.success('Similarity file downloaded!')
+    return local_filename
+
+# Load the similarity matrix and movie list from pickle files
+similarity_file = download_similarity_file()
+similarity = pickle.load(open(similarity_file, 'rb'))
 movies_list = pickle.load(open('movies.pkl', 'rb'))
 movies_df = pd.DataFrame(movies_list)
-
-# Function to load similarity chunks and concatenate them
-def load_similarity_chunks():
-    similarity_chunks = []
-    for filename in sorted(os.listdir('similarity_chunks')):
-        with open(os.path.join('similarity_chunks', filename), 'rb') as f:
-            similarity_chunks.append(pickle.load(f))
-    
-    # Use numpy to concatenate the chunks along axis 0 (rows)
-    return np.vstack(similarity_chunks)
-
-# Load the split similarity matrix
-similarity = load_similarity_chunks()
 
 # Function to fetch movie poster using The Movie Database API
 def fetch_poster(movie_id):
